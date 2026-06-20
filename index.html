@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mantle Tectonic Progression Engine</title>
+    <style>
+        body { background-color: #06060a; color: #d1d1db; font-family: monospace; padding: 20px; line-height: 1.4; margin: 0; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        h1 { color: #00ffff; border-bottom: 2px solid #1a1a2e; padding-bottom: 10px; margin: 0; font-size: 1.8em; }
+        .subtitle { color: #75758c; font-size: 0.9em; margin-bottom: 20px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #131324; padding: 12px; border-radius: 5px; border: 1px solid #22223c; font-weight: bold; }
+        .layout-main { display: grid; grid-template-columns: 1fr 480px; gap: 20px; margin-bottom: 20px; }
+        .box { background-color: #0f0f1b; padding: 18px; border-radius: 6px; border: 1px solid #1f1f35; }
+        .cyan { color: #00ffff; } .red { color: #ff3333; } .yellow { color: #ffcc00; } .orange { color: #ff9900; }
+        ul { list-style-type: none; padding: 0; max-height: 250px; overflow-y: auto; margin: 0; }
+        li { padding: 6px 8px; margin-bottom: 5px; border-radius: 4px; font-size: 0.82em; background-color: #141424; }
+        li.c-item { border-left: 4px solid #ffcc00; background-color: #211c12; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>🌍 TECTONIC MANTLE CONGRUENCY & PROGRESSION ENGINE</h1>
+    <div class="subtitle">Live Real-Time Cloud Pipeline: Processing Velocity Trajectories & Fixed Blindspot Indices</div>
+
+    <div style="margin-bottom: 20px;">
+        <span id="status" style="color: #00ff66; font-weight: bold;">🔄 Connecting Live to USGS Tectonic Feed Pipeline...</span>
+    </div>
+
+    <div class="grid-stats">
+        <div class="stat-card">Total Sampled (30 Days): <span id="s-total" style="color:#fff;">0</span></div>
+        <div class="stat-card cyan">Placeholders (10/35km): <span id="s-place">0</span></div>
+        <div class="stat-card red">Deep Shifts (>300km): <span id="s-deep">0</span></div>
+        <div class="stat-card yellow">Congruent Intersections: <span id="s-congruent">0</span></div>
+    </div>
+
+    <div class="layout-main">
+        <!-- METRIC MODEL PANEL -->
+        <div class="box" style="display: flex; flex-direction: column; gap: 15px;">
+            <div>
+                <h3 style="margin-top:0;" class="orange">📈 MATRIX SCANNER: VELOCITY & MAGNITUDE PROGRESSION</h3>
+                <div id="progression-analysis" style="font-size: 0.85em; color: #a5a5c2; background: #131324; padding: 12px; border-radius: 4px;">Analyzing live depth vectors...</div>
+            </div>
+            <div>
+                <h3 style="margin-top:0;" class="cyan">⚠️ BLINDSPOT CONTAMINATION INDEX</h3>
+                <div id="misinterpretation-analysis" style="font-size: 0.85em; color: #a5a5c2; background: #131324; padding: 12px; border-radius: 4px;">Evaluating data artifact limits...</div>
+            </div>
+        </div>
+
+        <!-- DEEP CORE LIST -->
+        <div class="box">
+            <h3 style="margin-top:0;" class="red">🔴 RECENT TRUE DEEP MANTLE FAILS (>300km)</h3>
+            <ul id="deep-seismic-list">
+                <li>Awaiting live telemetry array...</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="box">
+        <h3 class="yellow" style="margin-top: 0;">🔥 TIMELINE TRACKER: CHRONOLOGICAL CONGRUENCY INTERSECTIONS (Within 12 Hours)</h3>
+        <ul id="congruence-timeline">
+            <li>Building temporal alignment matrix...</li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+    async function executeLiveCloudFetch() {
+        try {
+            // FIXED CORRECTION LINK: Routing query cleanly to avoid connection drops
+            const usgsApi = "https://usgs.gov";
+            const response = await fetch(usgsApi);
+            if (!response.ok) throw new Error("HTTP connection failed.");
+            
+            const liveFeedData = await response.json();
+            
+            let masterTimeline = [];
+            let placeholders = [];
+            let deepShifts = [];
+
+            liveFeedData.features.forEach(feat => {
+                const epoch = new Date(feat.properties.time);
+                const magnitude = feat.properties.mag;
+                const loc = feat.properties.place;
+                const [lon, lat, depth] = feat.geometry.coordinates;
+                const record = { epoch, magnitude, loc, lon, lat, depth };
+
+                masterTimeline.push(record);
+                if (depth === 10 || depth === 35) {
+                    placeholders.push(record);
+                } else if (depth >= 300) {
+                    deepShifts.push(record);
+                }
+            });
+
+            masterTimeline.sort((a,b) => a.epoch - b.epoch);
+            deepShifts.sort((a,b) => b.epoch - a.epoch);
+
+            // 1. ADVANCEMENT PROGRESION TRENDS
+            let progressionText = "Insufficient deep-seated vector entries to compute progression.";
+            if (deepShifts.length >= 2) {
+                let splitHalf = Math.floor(deepShifts.length / 2);
+                let olderDeepRecords = deepShifts.slice(splitHalf);
+                let newerDeepRecords = deepShifts.slice(0, splitHalf);
+
+                let oldAvgDepth = olderDeepRecords.reduce((sum, e) => sum + e.depth, 0) / olderDeepRecords.length;
+                let newAvgDepth = newerDeepRecords.reduce((sum, e) => sum + e.depth, 0) / newerDeepRecords.length;
+                let oldAvgMag = olderDeepRecords.reduce((sum, e) => sum + e.magnitude, 0) / olderDeepRecords.length;
+                let newAvgMag = newerDeepRecords.reduce((sum, e) => sum + e.magnitude, 0) / newerDeepRecords.length;
+
+                let depthDelta = newAvgDepth - oldAvgDepth;
+                let strengthDelta = newAvgMag - oldAvgMag;
+
+                progressionText = `Deep Baseline Records Sampled: <b>${deepShifts.length} events</b><br><br>`;
+                progressionText += `Mantle Trajectory: <b style="color:${depthDelta >= 0 ? '#ff3333':'#00ff66'}">${depthDelta >= 0 ? '⬇️ DEEPENING':'⬆️ SHALLOWING'} by ${Math.abs(depthDelta).toFixed(2)} km</b><br>`;
+                progressionText += `Seismic Strength:  <b style="color:${strengthDelta >= 0 ? '#ff3333':'#00ff66'}">${strengthDelta >= 0 ? '📈 INCREASING':'📉 DECREASING'} by M ${Math.abs(strengthDelta).toFixed(2)}</b><br><br>`;
+                
+                if (depthDelta > 0 && strengthDelta > 0) {
+                    progressionText += `<span style="color:#ff3333; font-weight:bold;">🚨 COLLAPSE POTENTIAL:</span> Subduction tremors are penetrating deeper and gaining magnitude over time. This trend points toward an accelerating slab collapse.`;
+                } else {
+                    progressionText += `<span style="color:#00ff66;">✅ STEADY BASELINE:</span> Trajectory matches normal mantle displacement.`;
+                }
+            }
+            document.getElementById("progression-analysis").innerHTML = progressionText;
+
+            // 2. BLINDSPOT BLIND INDEX MASKING MATRIX
+            let contaminationPct = (placeholders.length / liveFeedData.features.length) * 100;
+            let misinterpretationText = `Contamination Rate: <b>${contaminationPct.toFixed(1)}%</b><br><br>`;
+            misinterpretationText += `Out of <b>${liveFeedData.features.length}</b> total events, <b>${placeholders.length} use uncalculated 10km/35km artifacts</b>.<br><br>`;
+            if (contaminationPct > 35) {
+                misinterpretationText += `<span style="color:#ffcc00; font-weight:bold;">⚠️ HIGH CONTAMINATION RISK:</span> Over a third of the dataset is masked by placeholder noise. This fake flat shelf distorts the true geological angle of the sinking plate.`;
+            } else {
+                document.getElementById("misinterpretation-analysis").innerHTML = `<span style="color:#00ff66;">✅ RELIABLE LAYOUT.</span>`;
+            }
+            document.getElementById("misinterpretation-analysis").innerHTML = misinterpretationText;
+
+            // 3. CHRONOLOGICAL PAIRING CONGRUENCY MATRIX
+            let matchingClusters = [];
+            deepShifts.forEach(d => {
+                placeholders.forEach(p => {
+                    let timeGap = Math.abs(d.epoch - p.epoch);
+                    if (timeGap <= 12 * 60 * 60 * 1000) {
+                        matchingClusters.push({ deep: d, placeholder: p, hours: (timeGap / (1000 * 60 * 60)).toFixed(1) });
+                    }
+                });
+            });
+
+            document.getElementById("s-total").textContent = liveFeedData.features.length;
+            document.getElementById("s-place").textContent = placeholders.length;
+            document.getElementById("s-deep").textContent = deepShifts.length;
+            document.getElementById("s-congruent").textContent = matchingClusters.length;
+
+            const deepList = document.getElementById("deep-seismic-list");
+            deepList.innerHTML = deepShifts.slice(0, 10).map(e => `
+                <li>🔴 <b>M ${e.magnitude.toFixed(1)}</b> &mdash; Depth: <b>${e.depth.toFixed(1)} km</b> <br><span style="color:#888;">${e.loc}</span></li>
+            `).join('') || "<li>No active events.</li>";
+
+            const timelineBox = document.getElementById("congruence-timeline");
+            if (matchingClusters.length > 0) {
+                timelineBox.innerHTML = matchingClusters.slice(0, 10).map(c => `
+                    <li class="c-item">
+                        ⏱️ <b>Time-Gap: ${c.hours} hrs</b> &mdash; 
+                        🔴 True Deep Failure (<b>${c.deep.depth}km</b>, M${c.deep.magnitude}) inside <i>${c.deep.loc}</i> 
+                        <br><span style="color:#8b8ba8; margin-left: 20px;">&Lsh; Paired with 🔷 Fixed System Placeholder (<b>${c.placeholder.depth}km</b>, M${c.placeholder.magnitude}) inside <i>${c.placeholder.loc}</i></span>
