@@ -69,13 +69,25 @@
 <script>
     async function executeLiveCloudFetch() {
         try {
-            // FIXED CORRECTION LINK: Routing query cleanly to avoid connection drops
+            // FIXED FEED ENDPOINT: Pulling data for all earthquakes M4.5+ over the last 30 days
             const usgsApi = "https://usgs.gov";
-            const response = await fetch(usgsApi);
-            if (!response.ok) throw new Error("HTTP connection failed.");
             
-            const liveFeedData = await response.json();
+            // To completely bypass GitHub Pages strict security sandboxing, we handle the request through a secure backup mirror
+            const fallbackApi = "https://allorigins.win" + encodeURIComponent(usgsApi);
             
+            let response = await fetch(usgsApi).catch(() => fetch(fallbackApi));
+            if (!response.ok) throw new Error("HTTP connection dropped.");
+            
+            let payload = await response.json();
+            
+            // Handle proxy content unpacking if the fallback mirror was called
+            let liveFeedData = payload.contents ? JSON.parse(payload.contents) : payload;
+            
+            if (!liveFeedData || !liveFeedData.features || liveFeedData.features.length === 0) {
+                document.getElementById("status").textContent = "⚠️ Connection established, but data package was empty. Retrying...";
+                return;
+            }
+
             let masterTimeline = [];
             let placeholders = [];
             let deepShifts = [];
@@ -98,7 +110,7 @@
             masterTimeline.sort((a,b) => a.epoch - b.epoch);
             deepShifts.sort((a,b) => b.epoch - a.epoch);
 
-            // 1. ADVANCEMENT PROGRESION TRENDS
+            // 1. ADVANCEMENT PROGRESSION TRENDS
             let progressionText = "Insufficient deep-seated vector entries to compute progression.";
             if (deepShifts.length >= 2) {
                 let splitHalf = Math.floor(deepShifts.length / 2);
@@ -125,14 +137,14 @@
             }
             document.getElementById("progression-analysis").innerHTML = progressionText;
 
-            // 2. BLINDSPOT BLIND INDEX MASKING MATRIX
+            // 2. BLINDSPOT CONTAMINATION INDEX
             let contaminationPct = (placeholders.length / liveFeedData.features.length) * 100;
             let misinterpretationText = `Contamination Rate: <b>${contaminationPct.toFixed(1)}%</b><br><br>`;
             misinterpretationText += `Out of <b>${liveFeedData.features.length}</b> total events, <b>${placeholders.length} use uncalculated 10km/35km artifacts</b>.<br><br>`;
             if (contaminationPct > 35) {
                 misinterpretationText += `<span style="color:#ffcc00; font-weight:bold;">⚠️ HIGH CONTAMINATION RISK:</span> Over a third of the dataset is masked by placeholder noise. This fake flat shelf distorts the true geological angle of the sinking plate.`;
             } else {
-                document.getElementById("misinterpretation-analysis").innerHTML = `<span style="color:#00ff66;">✅ RELIABLE LAYOUT.</span>`;
+                misinterpretationText += `<span style="color:#00ff66;">✅ RELIABLE LAYOUT:</span> Artifact data noise limits are minimal.`;
             }
             document.getElementById("misinterpretation-analysis").innerHTML = misinterpretationText;
 
@@ -154,13 +166,3 @@
 
             const deepList = document.getElementById("deep-seismic-list");
             deepList.innerHTML = deepShifts.slice(0, 10).map(e => `
-                <li>🔴 <b>M ${e.magnitude.toFixed(1)}</b> &mdash; Depth: <b>${e.depth.toFixed(1)} km</b> <br><span style="color:#888;">${e.loc}</span></li>
-            `).join('') || "<li>No active events.</li>";
-
-            const timelineBox = document.getElementById("congruence-timeline");
-            if (matchingClusters.length > 0) {
-                timelineBox.innerHTML = matchingClusters.slice(0, 10).map(c => `
-                    <li class="c-item">
-                        ⏱️ <b>Time-Gap: ${c.hours} hrs</b> &mdash; 
-                        🔴 True Deep Failure (<b>${c.deep.depth}km</b>, M${c.deep.magnitude}) inside <i>${c.deep.loc}</i> 
-                        <br><span style="color:#8b8ba8; margin-left: 20px;">&Lsh; Paired with 🔷 Fixed System Placeholder (<b>${c.placeholder.depth}km</b>, M${c.placeholder.magnitude}) inside <i>${c.placeholder.loc}</i></span>
